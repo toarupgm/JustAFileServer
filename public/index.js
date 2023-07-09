@@ -17,4 +17,26 @@ $(document).ready(function(){
         })
         
     });
+
+    $("#upload").on(function () {
+        var data = new FormData();
+        data.append('file', $("#file")[0].files[0]);
+    
+        var config = {
+            onUploadProgress: function(progressEvent) {
+                var percentCompleted = Math.round( (progressEvent.loaded * 100) / progressEvent.total );
+                console.log(percentCompleted);
+            }
+        };
+    
+        axios.put('/upload/', data, config)
+            .then(function (res) {
+                output.className = 'container';
+                output.innerHTML = res.data;
+            })
+            .catch(function (err) {
+                output.className = 'container text-danger';
+                output.innerHTML = err.message;
+            });
+    });
 });

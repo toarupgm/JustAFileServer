@@ -10,10 +10,10 @@ var size = 0;
 // var maxfilesize = 1073741824; //1073741824bytes = 1GB
 const PORT = parseInt(process.argv[2])
 
-const file = {files:[]}
+var file = {files:[]}
 if(fs.existsSync("./file.json"))
 {
-    const file = JSON.parse(fs.readFileSync('./file.json', 'utf8'));
+    file = JSON.parse(fs.readFileSync('./file.json', 'utf8'));
 }
 var files = file["files"]
 
@@ -85,22 +85,24 @@ app.post('/upload', upload.single('file'), function (req, res, next) {
     {
         if(file.size > maxsize - size){ // 1073741824byte=1GB
             res.send("ファイルサイズが大きすぎます。<a href='/'>戻る</a>")
-            return;
-        }
-        console.log("[+]","Upload","filename",file.originalname,"IP:",ip);
-        const admin_token = crypto.randomUUID();
-        const read_token = crypto.randomUUID();
-        const del_token = crypto.randomUUID();
+        }else{
+            console.log("[+]","Upload","filename",file.originalname,"IP:",ip);
+            const admin_token = crypto.randomUUID();
+            const read_token = crypto.randomUUID();
+            const del_token = crypto.randomUUID();
 
-        files.push({
-            ip:getClientIp(req),
-            filename:file.filename,
-            path:"./uploads/" + file.filename,
-            name:file.originalname,
-            size:file.size,
-            token:{ admin:admin_token,read:read_token,delete:del_token }
-        });
-        res.redirect("/");
+            files.push({
+                ip:getClientIp(req),
+                filename:file.filename,
+                path:"./uploads/" + file.filename,
+                name:file.originalname,
+                size:file.size,
+                token:{ admin:admin_token,read:read_token,delete:del_token }
+            });
+            res.redirect("/");
+        }
+    }else{
+        res.send("no file")
     }
 });
 app.get('/download/:token', (req,res) => {
@@ -148,6 +150,12 @@ app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
 process.on("exit", exitCode => {
     console.log("EXIT")
+    fs.readdirSync('./uploads/').forEach(f => {
+        if(!files.map(e=>e.filename).includes(file))
+        {
+            fs.unlinkSync('./uploads/' + file);
+        }
+    });
     fs.writeFileSync('./file.json', JSON.stringify({"files":files},null , "\t"));
 });
 process.on("SIGINT", ()=>process.exit(0));
