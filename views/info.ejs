@@ -42,12 +42,14 @@
                         <% if(file.token.admin){ %>
                             <button type="button" class="btn btn-danger delete-btn">Delete</button>
                         <% } %>
-                        <button type="button" class="btn btn-info share-btn">Share</button><input value="none" id="share-url" readonly>
+                        <button type="button" class="btn btn-info" id="share-btn">Share</button>
+                        <input value="none" id="share-url" readonly>
                     </div>
 
                     <hr>
                     <% if(istext){ %>
                         <pre><code><%= text %></code></pre>
+                        <p>*まだ続く</p>
                     <% } else { %>
                         <code>Binary File</code>
                     <% } %>

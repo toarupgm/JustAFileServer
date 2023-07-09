@@ -1,7 +1,7 @@
 $(document).ready(function(){
     const share_url = location.origin + "/info/" + file.token.read;
     $("#share-url").val(share_url);
-    $(".share-btn").on("click",function(){
+    $("#share-btn").on("click",function(){
         $("#share-url").select();
         $2.scrollTo($2.scrollWidth,0)
         var copytext = share_url;
@@ -13,9 +13,11 @@ $(document).ready(function(){
         alert("copied")
     });
     $(".download-btn").on("click",function(){
+        $(document.body).css("cursor","wait")
         location.href = '/download/' + file.token.admin || file.token.read;
     });
     $(".delete-btn").on("click",function(){
+        $(document.body).css("cursor","wait")
         fetch('/delete/' + file.token.admin || file.token.delete,  {
             method: 'DELETE'
         }).then(()=>{

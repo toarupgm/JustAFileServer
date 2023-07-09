@@ -25,6 +25,10 @@ for(let i = 0;i < files.length;i++)
 const app = express()
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.json());
+app.use((req,res,next)=>{
+    console.log(getClientIp(req),req.url,req.headers["sec-ch-ua-platform"]);
+    next();
+})
 app.use(express.urlencoded({
     extended: true
 }));
@@ -33,7 +37,7 @@ app.set('view engine', 'ejs')
 
 
 app.get('/', (req, res) => {
-	res.render("fileserver",{"files":files.filter((e)=>getClientIp(req)==e.ip)})
+	res.render("index",{"files":files.filter((e)=>getClientIp(req)==e.ip)})
 })
 
 
@@ -122,20 +126,23 @@ app.get('/info/:token', (req,res) => {
         const filename = file.filename;
         if(fs.existsSync('./uploads/' + filename))
         {
-            fs.readFile("./uploads/" + filename, (err, result) => {
-                if (err) throw err;
+            var readStream = fs.createReadStream("./uploads/" + filename);
+            readStream
+                .on("data", function (chunk) {
+                    const text = chunk.toString("utf-8");
+                    const u8 = new Uint8Array( chunk );
+                    var js = {};
+                    js["file"] = {...file};
+                    js["file"]["token"] = file.token.admin===token ? {admin:token,delete:file.token.delete,read:file.token.read} : {read:token}
+                    js["istext"] = isText(u8);
+                    if(js["istext"])
+                    {
+                        js["text"] = text.substring(0,1024);
+                    }
+                    res.render("info",js);
 
-                const u8 = new Uint8Array( result.buffer );
-                var js = {};
-                js["file"] = {...file};
-                js["file"]["token"] = file.token.admin===token ? {admin:token,delete:file.token.delete,read:file.token.read} : {read:token}
-                if(isText(u8))
-                {
-                    js["text"] = result;
-                }
-                js["istext"] = isText(u8);
-                res.render("info",js);
-            });
+                    readStream.destroy();
+                })
         }else{
             res.send({"status":"failed","message":"not exists"});
         }
@@ -151,9 +158,9 @@ app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 process.on("exit", exitCode => {
     console.log("EXIT")
     fs.readdirSync('./uploads/').forEach(f => {
-        if(!files.map(e=>e.filename).includes(file))
+        if(!files.map(e=>e.filename).includes(f))
         {
-            fs.unlinkSync('./uploads/' + file);
+            fs.unlinkSync('./uploads/' + f);
         }
     });
     fs.writeFileSync('./file.json', JSON.stringify({"files":files},null , "\t"));
